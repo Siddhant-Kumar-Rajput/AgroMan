@@ -1,0 +1,17 @@
+node_modules/
+dist/
+functions/lib/
+.env
+.env.*
+!.env.example
+*.local
+*service-account*.json
+*-firebase-adminsdk-*.json
+.firebase/
+*-debug.log
+test-results/
+playwright-report/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+.DS_Store

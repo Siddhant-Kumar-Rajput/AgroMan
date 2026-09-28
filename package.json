@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "functions"
+    "functions",
+    "worker"
   ],
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "npm run build && npm run build -w functions && npm test",
+    "check": "npm run build && npm run build -w functions && npm run build -w worker && npm test",
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {

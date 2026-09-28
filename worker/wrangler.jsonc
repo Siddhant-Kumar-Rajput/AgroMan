@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "agroman-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-28",
+  "workers_dev": true,
+  "ai": { "binding": "AI", "remote": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "agroman",
+      "database_id": "96e9c6b4-54a5-4bb4-8336-80c41fd8e0ae",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "vars": {
+    "FIREBASE_PROJECT_ID": "smart-venue-orchestrator",
+    "FIREBASE_PROJECT_NUMBER": "391981839585",
+    "FIREBASE_APP_ID": "1:391981839585:web:d5941cf904832418d3b3a0",
+    "GEMINI_MODEL": "gemini-3.8-flash",
+    "ALLOWED_ORIGINS": "http://localhost:5173,https://smart-venue-orchestrator.web.app,https://smart-venue-orchestrator.firebaseapp.com",
+    "REQUIRE_APP_CHECK": "false",
+    "DAILY_REQUEST_LIMIT": "40",
+  },
+  "secrets": {
+    "required": ["GEMINI_API_KEY"],
+  },
+}

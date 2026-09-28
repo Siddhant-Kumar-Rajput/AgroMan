@@ -14,6 +14,7 @@ import {
   type Report,
 } from "../../shared/domain";
 export const demo = import.meta.env.VITE_API_MODE !== "live";
+const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 export async function currentPosition() {
   return new Promise<{ lat: number; lon: number }>((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -33,8 +34,9 @@ export async function currentPosition() {
   });
 }
 let credentials:
-  Promise<{ authorization: string; "X-Firebase-AppCheck": string }> | undefined;
-let appCheck: AppCheck;
+  | Promise<{ authorization: string; "X-Firebase-AppCheck"?: string }>
+  | undefined;
+let appCheck: AppCheck | undefined;
 async function headers() {
   if (!credentials)
     credentials = (async () => {
@@ -44,18 +46,20 @@ async function headers() {
         projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
         appId: import.meta.env.VITE_FIREBASE_APP_ID,
       });
-      appCheck = initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(
-          import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        ),
-        isTokenAutoRefreshEnabled: true,
-      });
+      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+      if (siteKey)
+        appCheck = initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(siteKey),
+          isTokenAutoRefreshEnabled: true,
+        });
       const auth = getAuth(app);
       await auth.authStateReady();
       const user = auth.currentUser ?? (await signInAnonymously(auth)).user;
       return {
         authorization: `Bearer ${await user.getIdToken()}`,
-        "X-Firebase-AppCheck": (await getToken(appCheck)).token,
+        ...(appCheck
+          ? { "X-Firebase-AppCheck": (await getToken(appCheck)).token }
+          : {}),
       };
     })();
   // Refresh credentials for each request; Firebase manages token caching/renewal.
@@ -63,11 +67,13 @@ async function headers() {
   const auth = getAuth();
   return {
     authorization: `Bearer ${await auth.currentUser!.getIdToken()}`,
-    "X-Firebase-AppCheck": (await getToken(appCheck)).token,
+    ...(appCheck
+      ? { "X-Firebase-AppCheck": (await getToken(appCheck)).token }
+      : {}),
   };
 }
 export async function request<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`/v1/${path}`, {
+  const response = await fetch(`${apiBase}/v1/${path}`, {
     method: body ? "POST" : "GET",
     headers: { "Content-Type": "application/json", ...(await headers()) },
     body: body ? JSON.stringify(body) : undefined,

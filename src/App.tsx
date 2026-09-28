@@ -54,6 +54,31 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 type Page = "home" | "advisor" | "community" | "authority";
 const photo =
   "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85";
+const speechLocales: Record<string, string> = {
+  en: "en-IN",
+  as: "as-IN",
+  bn: "bn-IN",
+  brx: "brx-IN",
+  doi: "doi-IN",
+  gu: "gu-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+  ks: "ks-IN",
+  kok: "kok-IN",
+  mai: "mai-IN",
+  ml: "ml-IN",
+  "mni-Mtei": "mni-IN",
+  mr: "mr-IN",
+  ne: "ne-NP",
+  or: "or-IN",
+  pa: "pa-IN",
+  sa: "sa-IN",
+  sat: "sat-IN",
+  sd: "sd-IN",
+  ta: "ta-IN",
+  te: "te-IN",
+  ur: "ur-IN",
+};
 export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [districtId, setDistrictId] = useState(() => {
@@ -86,8 +111,6 @@ export default function App() {
   const recordTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
-  const audio = useRef<HTMLAudioElement | undefined>(undefined);
-  const audioUrl = useRef<string | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
@@ -119,8 +142,7 @@ export default function App() {
       window.removeEventListener("offline", update);
       clearTimeout(recordTimer.current);
       recorder.current?.stream.getTracks().forEach((track) => track.stop());
-      audio.current?.pause();
-      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
+      window.speechSynthesis?.cancel();
     };
   }, []);
   useEffect(() => {
@@ -370,27 +392,28 @@ export default function App() {
     }
     if (fileRef.current) fileRef.current.value = "";
   }
-  async function speak(text: string) {
-    if (demo) {
+  function speak(text: string) {
+    if (!("speechSynthesis" in window)) {
       setError(t("voiceUnavailable"));
       return;
     }
-    try {
-      const result = await request<{ audio: string }>("speech/synthesize", {
-        text,
-        locale,
-      });
-      audio.current?.pause();
-      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
-      const bytes = Uint8Array.from(atob(result.audio), (c) => c.charCodeAt(0));
-      audioUrl.current = URL.createObjectURL(
-        new Blob([bytes], { type: "audio/mpeg" }),
-      );
-      audio.current = new Audio(audioUrl.current);
-      await audio.current.play();
-    } catch (e) {
-      setError((e as Error).message);
+    const language = speechLocales[locale] ?? locale;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = language;
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(
+      (candidate) =>
+        candidate.lang.toLowerCase() === language.toLowerCase() ||
+        candidate.lang.toLowerCase().startsWith(`${locale.toLowerCase()}-`),
+    );
+    if (voices.length && !voice) {
+      setError(t("voiceUnavailable"));
+      return;
     }
+    if (voice) utterance.voice = voice;
+    utterance.onerror = () => setError(t("voiceUnavailable"));
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   }
   async function record() {
     if (demo) {

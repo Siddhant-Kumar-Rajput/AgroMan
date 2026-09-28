@@ -40,6 +40,6 @@ export default defineConfig({
     }),
   ],
   server: {
-    proxy: { "/v1": "http://127.0.0.1:5001/demo-agroman/asia-south1/api" },
+    proxy: { "/v1": "http://127.0.0.1:8787" },
   },
 });

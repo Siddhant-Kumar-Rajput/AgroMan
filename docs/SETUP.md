@@ -1,70 +1,106 @@
 # Manual setup and live activation
 
-## What you provide
+AgroMan uses Firebase for the web app, anonymous identity and hosting. Cloudflare provides the Worker API, D1 database, speech recognition and Indic translation. Gemini provides advisory and image analysis. This avoids the paid Google Speech, Text-to-Speech, Translation, Functions and Secret Manager services.
 
-- GitHub repository is already connected as `origin`.
-- Google Cloud/Firebase **project ID**, chosen region, and Firebase public web configuration.
-- Your own browser login for Firebase and Google Cloud.
-- Confirmation of Earth Engine eligibility/registration and billing setup.
+Never paste API keys, passwords, OTPs or access tokens into chat or commit them to Git.
 
-Do not paste API keys, passwords, service-account keys, OTPs or access tokens into chat. No service-account JSON key is needed: use Application Default Credentials locally and the deployed runtime identity in Cloud Functions.
+## 1. Firebase console
 
-## Account actions
+Project: `smart-venue-orchestrator`.
 
-1. Create a Google Cloud project and attach Firebase to that same project.
-2. Link billing (Blaze is required for deploying functions). Set budget alerts. Alerts do not cap charges. Limit API quotas and review the function's `maxInstances: 2` setting.
-3. Create Firestore in Mumbai (`asia-south1`). Choose deliberately: database location is not casually changeable. Enable Anonymous Authentication.
-4. Register a Firebase Web App and App Check with reCAPTCHA v3 for your deployment hostname. Never allow arbitrary domains. Keep production App Check verification enabled.
-5. Enable Cloud Functions, Cloud Run, Cloud Build, Artifact Registry, Secret Manager, BigQuery, Earth Engine, Cloud Translation, Cloud Speech-to-Text and Cloud Text-to-Speech APIs.
-6. Register/verify the project for eligible noncommercial Earth Engine use.
-7. Create a Gemini API key in AI Studio and select an actually available Flash model for your project.
-8. Give the runtime identity minimum access: Firestore data access, BigQuery Job User and read access to the context/boundary dataset, Secret Manager access to the Gemini secret, and the relevant speech/translation permissions. Do not grant project Owner to runtime identities.
+1. Open **Build → Authentication → Sign-in method** and enable **Anonymous**. Phone/OTP is not part of Phase 1.
+2. Keep the registered web app named **AgroMan Web**.
+3. App Check can wait until the production hostname is working. Later, register the web app with reCAPTCHA, add the exact production domains, test metrics, then change `REQUIRE_APP_CHECK` to `true` in `worker/wrangler.jsonc` and redeploy.
+4. Billing is not required for Firebase Hosting's no-cost allowance or Firebase Authentication used here. Review current quotas before launch.
 
-## Local configuration
+The ignored `.env.local` holds only Firebase's public web configuration and the API URL. Vite-prefixed values are browser-visible; never place the Gemini key there. Keep `VITE_API_MODE=demo` until the live smoke test succeeds.
 
-The Google Cloud CLI and Firebase CLI are installed on this computer. Sign in yourself:
+## 2. Cloudflare authorization and D1
+
+The device does not need to remain connected after deployment. Use one of these local authorization methods:
+
+- Interactive: `npx wrangler login`
+- Automation: set a narrowly scoped `CLOUDFLARE_API_TOKEN` in your local shell or deployment provider; do not commit it.
+
+Then create and configure D1:
 
 ```sh
-firebase login
-gcloud auth login
-gcloud auth application-default login
-gcloud config set project YOUR_PROJECT
-firebase use --add
-firebase functions:secrets:set GEMINI_API_KEY
+npx wrangler whoami
+npx wrangler d1 create agroman --location=apac
 ```
 
-Create ignored `.env.local` using `.env.example`. Set `VITE_API_MODE=live` only when services and data are ready. Copy your public Firebase web values and reCAPTCHA **site** key there. Vite-prefixed variables are public: never put Gemini secrets into them.
+Copy the returned database ID into `worker/wrangler.jsonc`, replacing the all-zero placeholder. Apply the schema:
 
-Create ignored `functions/.env.YOUR_PROJECT` using `functions/.env.example`. Set the model identifier, `CONTEXT_TABLE` and `BOUNDARY_TABLE`. `GEMINI_API_KEY` stays in Secret Manager. Do not enable optional paid model features inadvertently.
+```sh
+npx wrangler d1 migrations apply agroman --remote --config worker/wrangler.jsonc
+```
 
-## Real data import
+## 3. Gemini secret
+
+The same Gemini API key can call the enabled Gemini models; a different key per Gemini feature is unnecessary. Separate development and production keys are still recommended for rotation and quota visibility.
+
+Enter it directly into Wrangler's hidden prompt:
+
+```sh
+npx wrangler secret put GEMINI_API_KEY --config worker/wrangler.jsonc
+```
+
+The source contains no Gemini key. Cloudflare encrypts the Worker secret. Confirm the model identifier in `worker/wrangler.jsonc` exists for the key before deployment.
+
+## 4. Earth Engine context export
+
+Earth Engine registration is reported complete. Install the operator script dependency, authenticate Earth Engine if prompted, and create a reviewable D1 SQL file:
 
 ```sh
 python -m pip install -r scripts/requirements.txt
-python scripts/import_context.py --project YOUR_PROJECT --dataset agroman --date YYYY-MM-DD
+python scripts/import_context.py --project smart-venue-orchestrator --date YYYY-MM-DD
 ```
 
-Use a historical date with complete observations; the script defaults to 14 days ago. The operator-run script reads real Earth Engine sources, appends context into BigQuery and replaces the explicitly named district-boundary table. It stops when any boundary does not resolve uniquely. Check GAUL district names/age and data licenses before using outside the prototype. The modeled pH dataset is a baseline, not a current measurement. Keep every metric's date/resolution visible.
+Use a historical date with complete observations; the default is 14 days ago. The script reads OpenLandMap modeled pH, CHIRPS rainfall, SMAP moisture and GAUL boundaries. It stops rather than inventing unavailable values. Modeled soil is a regional baseline, not a laboratory farm measurement.
 
-The current registry is six pilot districts. Review returned statistics and boundary alignment before exposing live GPS. No invented or fallback numeric values are imported. Run imports again to refresh observations; this first version has no automatic schedule.
+Review the generated file, then apply it explicitly:
 
-## Validate and deploy
+```sh
+npx wrangler d1 execute agroman --remote --file scripts/generated/context-YYYY-MM-DD.sql --config worker/wrangler.jsonc
+```
+
+Generated data is ignored by Git. Verify licensing, district aliases, dates, units and boundary alignment before enabling live location lookup.
+
+## 5. Deploy and test the API
 
 ```sh
 npm run check
 npm run test:e2e
-firebase deploy --only firestore,functions,hosting
+npx wrangler deploy --config worker/wrangler.jsonc
 ```
 
-Deploy only after credentials, IAM, data and quotas are reviewed. Test on the deployed HTTPS hostname; browser GPS/microphone and production App Check depend on a valid origin. Configure Firestore TTL policies using the checked-in field overrides and verify them in the console; TTL deletion is asynchronous.
+Record the resulting `https://...workers.dev` URL. Put it in ignored `.env.local` as `VITE_API_BASE_URL`, switch `VITE_API_MODE=live`, rebuild, and perform this live smoke test:
 
-Live smoke test: anonymous sign-in → App Check → GPS boundary resolution → BigQuery context → Gemini text reply → photo uncertainty result → consent → metadata report → aggregate view. Repeat voice and translation checks for each claimed language. Ensure no image, audio, raw coordinates, prompts or response bodies appear in application logs. Provider processing/retention terms apply separately from this application's storage policy.
+anonymous sign-in → location/context → Gemini text reply → photo uncertainty result → consent → metadata-only report → aggregate outbreak view.
 
-## Release gaps
+Also test translation and microphone behavior on each target device/language. Browser/device voices determine text-to-speech coverage. Ensure images, audio, raw coordinates, prompts and response bodies do not appear in application logs.
 
-- Live tests await your project credentials; do not claim provider integrations are verified yet.
-- Expand district coverage and validate agronomic evidence before field use.
-- Verify all scheduled-language translations and supported speech locales.
-- Finish a real geographic basemap, curated crop rules, weather integration and browser accessibility review.
-- Anonymous IDs deter ordinary duplicates but are not proof of distinct farmers; clearing app data can create a new identity.
-- Budget alerts, application counters and function instance limits reduce cost exposure but are not a global hard billing cap.
+## 6. Firebase Hosting
+
+Build and deploy only Hosting; `firebase.json` intentionally does not deploy Cloud Functions:
+
+```sh
+npm run build
+firebase deploy --only hosting --project smart-venue-orchestrator
+```
+
+Test the generated `web.app` hostname first. After it works, Firebase Console → Hosting → **Add custom domain**. The complete owned domain is still needed; `agroman.....` is not actionable. Firebase will show the exact DNS TXT/A records to add at the registrar and will provision HTTPS after verification.
+
+Add both the Firebase hostname and final custom domain to:
+
+- Firebase Authentication → Settings → Authorized domains.
+- App Check's allowed domains when App Check is activated.
+- `ALLOWED_ORIGINS` in `worker/wrangler.jsonc`, followed by a Worker redeploy.
+
+## Release gates
+
+- Do not switch out of demonstration mode until Worker, D1, auth, origin restrictions and real context all pass staging tests.
+- Verify Cloudflare and Gemini quotas; rate limits reduce exposure but are not a global spending cap.
+- Have agronomic recommendations reviewed against authoritative evidence before field use.
+- Anonymous installation identity reduces casual duplicate reports but does not prove distinct farmers.
+- Phase 2 profiles, OTP login, crop history, insurance and export-demand features remain out of scope.

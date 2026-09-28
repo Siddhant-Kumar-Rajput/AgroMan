@@ -5,6 +5,9 @@ functions/lib/
 .env.*
 !.env.example
 *.local
+worker/.dev.vars
+worker/.wrangler/
+scripts/generated/
 *service-account*.json
 *-firebase-adminsdk-*.json
 .firebase/

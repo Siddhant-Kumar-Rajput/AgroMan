@@ -13,6 +13,15 @@ try {
       configurable: true,
       value: () => [],
     });
+    const createBuffer = AudioContext.prototype.createBuffer;
+    AudioContext.prototype.createBuffer = function (
+      channels,
+      length,
+      sampleRate,
+    ) {
+      window.__agromanSpeechSeconds = length / sampleRate;
+      return createBuffer.call(this, channels, length, sampleRate);
+    };
   });
   await page.goto(site, { waitUntil: "networkidle" });
   await page
@@ -88,6 +97,11 @@ try {
     undefined,
     { timeout: 60000 },
   );
+  const speechSeconds = await page.evaluate(
+    () => window.__agromanSpeechSeconds ?? 0,
+  );
+  if (speechSeconds <= 2)
+    throw new Error(`Hindi speech was truncated at ${speechSeconds} seconds.`);
   if (pageErrors.length) throw new Error(pageErrors.join("; "));
   console.log(
     JSON.stringify({
@@ -96,6 +110,7 @@ try {
       responseCharacters: result.text.length,
       hindiResponse: "passed",
       hindiSpeechFallback: "passed",
+      hindiSpeechSeconds: Math.round(speechSeconds * 10) / 10,
       speechAssetStatus: speechResponse.status(),
     }),
   );

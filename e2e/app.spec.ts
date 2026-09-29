@@ -141,6 +141,18 @@ test("Hindi read aloud loads the on-device fallback", async ({
       configurable: true,
       value: () => [],
     });
+    const createBuffer = AudioContext.prototype.createBuffer;
+    AudioContext.prototype.createBuffer = function (
+      channels,
+      length,
+      sampleRate,
+    ) {
+      (
+        window as Window &
+          typeof globalThis & { __agromanSpeechSeconds?: number }
+      ).__agromanSpeechSeconds = length / sampleRate;
+      return createBuffer.call(this, channels, length, sampleRate);
+    };
   });
   await page.goto("/");
   await page.getByLabel("Language", { exact: true }).selectOption("hi");
@@ -162,5 +174,16 @@ test("Hindi read aloud loads the on-device fallback", async ({
   await expect(page.getByText("Preparing voice…")).toHaveCount(0, {
     timeout: 45000,
   });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            window as Window &
+              typeof globalThis & { __agromanSpeechSeconds?: number }
+          ).__agromanSpeechSeconds ?? 0,
+      ),
+    )
+    .toBeGreaterThan(2);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });

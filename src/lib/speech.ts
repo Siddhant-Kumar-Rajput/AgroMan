@@ -139,7 +139,9 @@ async function speakOffline(text: string, locale: string) {
   const chunks: Int16Array[] = [];
   worker.synthesize(text, (chunk) => {
     if (chunk.length) chunks.push(chunk);
-    return true;
+    // eSpeak treats a truthy callback result as "stop synthesis". Returning
+    // false lets it deliver every audio chunk for the full sentence.
+    return false;
   });
   const length = chunks.reduce((total, chunk) => total + chunk.length, 0);
   if (!length) return false;

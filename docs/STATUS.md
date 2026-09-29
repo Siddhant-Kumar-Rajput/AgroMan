@@ -1,44 +1,36 @@
 # Phase 1 implementation status
 
-This is an implementation milestone, not a claim that the hackathon submission is complete.
+The Phase 1 live foundation is deployed. This is not yet a claim of agronomic production readiness.
 
-## Implemented locally
+## Live and verified
 
-- Mobile-first PWA interface using the requested taste skill.
-- Advisor text/image interaction with explicit demonstration mode.
-- Three IndexedDB conversations and eighteen-turn limit; demo/live storage separated.
-- Image compression, consent dialog and metadata-only demonstration reporting.
-- Spatial/time/confidence clustering and in-app nearby banner.
-- Aggregate authority view and JSON download.
-- Cloudflare Worker API for Firebase token validation, optional App Check, quotas, Gemini, Whisper, AI4Bharat translation, D1 context, boundary lookup, consented reports and diagnosis receipts.
-- Browser-native text-to-speech so Google Speech/TTS/Translation and Secret Manager billing are not required.
-- Firebase Hosting configuration and an operator-reviewed Earth Engine-to-D1 export path.
+- Mobile-first PWA: `https://agroman-siddhant-rajput.web.app`.
+- Cloudflare API: `https://agroman-api.agroman.workers.dev`.
+- Firebase Anonymous Authentication enabled and returning valid ID tokens.
+- Worker verification rejects unauthenticated requests and accepts valid Firebase tokens.
+- APAC D1 database created with quotas, request state, conversations, diagnosis receipts, reports, translation cache, district context and boundaries.
+- Six real district context rows and boundaries imported from Earth Engine for 15 September 2026.
+- Context is explicitly district-scale: OpenLandMap modeled surface pH, CHIRPS preceding-30-day rainfall and SMAP preceding-30-day surface moisture.
+- Gemini secret stored encrypted in Cloudflare; no key is committed locally.
+- `gemini-3.5-flash-lite` selected after a live compatibility test; authenticated advisory returned 200 with a valid response.
+- Public mobile-browser test confirmed the connected-services build and a live advisory response with no console errors.
+- Browser-native text-to-speech avoids paid Google TTS.
 
-## Confirmed project inputs
+## Local verification
 
-- Firebase project: `smart-venue-orchestrator`; web app registered.
-- Cloudflare account/subdomain: `agroman.workers.dev`.
-- Earth Engine registration: reported complete by the project owner.
-- Gemini API key: created by the project owner, but not placed in source control.
-- Authentication choice: Firebase Anonymous Authentication for Phase 1.
+- Frontend, legacy safety backend and Cloudflare Worker compile.
+- Nine domain tests pass.
+- Ten Playwright flows pass across desktop and mobile in explicitly isolated demonstration-test mode.
+- Wrangler deployment dry-run and D1 migrations pass.
 
-## Requires the project owner
+## Remaining release hardening
 
-- Enable Anonymous Authentication in the Firebase console.
-- Finish Cloudflare CLI authorization or provide a scoped API token locally.
-- Enter the Gemini key through `wrangler secret put GEMINI_API_KEY`; never paste it into source or chat.
-- Create/confirm App Check after the production hostname is known, then enforce it in the Worker.
-- Provide the complete owned custom domain, not the partial `agroman.....`, and access its DNS records.
-- Review and import generated Earth Engine observations before switching live mode on.
+- Configure Firebase App Check/reCAPTCHA for the production hostname, observe metrics, then enforce it in the Worker.
+- Validate every claimed translation and speech-input language on target devices; browser voices determine speech-output coverage.
+- Review agronomic recommendations against authoritative crop evidence before field use.
+- Replace deprecated GAUL 2015 boundary sourcing with a verified current boundary source before long-term operation.
+- Add current weather and source-freshness policy.
+- Expand beyond the six-district pilot if the hackathon scope requires it.
+- Complete accessibility, install/offline checks and the judge demo recording.
 
-## Remaining submission work
-
-- Deploy and smoke-test the Worker, D1 database and Firebase Hosting origin.
-- Expand and verify district coverage across Punjab, Uttar Pradesh and Maharashtra.
-- Validate recommendations against an authoritative crop evidence library.
-- Review all translated copy with speakers and test speech input/output on target devices.
-- Add current weather and source-freshness checks.
-- Replace the schematic with a geographic basemap if desired.
-- Complete release accessibility, install/offline tests and the judge demo recording.
-
-Optional Phase 1 dashboard, mandi prices and continuous live camera remain deferred. Phase 2 is out of scope.
+The dashboard, mandi prices and continuous camera remain optional/deferred Phase 1 items. Phase 2 profiles, OTP login, crop history, insurance and export-demand features remain out of scope.

@@ -1,72 +1,61 @@
-# AgroMan activation checklist
+# AgroMan activation and operations
 
-Most setup is handled from the repository or deployment CLI. You do **not** need to run every command in this file yourself.
+Most setup is automated. The first live deployment is complete; this file records what was done and what still needs a project-owner decision.
 
-## What you must do manually
+## Completed
 
-Only account-owner actions or secret entry require you:
+- Firebase project/web app linked and Anonymous Authentication enabled.
+- Firebase Hosting deployed at `https://agroman-siddhant-rajput.web.app`.
+- Cloudflare authenticated on this device.
+- Worker deployed at `https://agroman-api.agroman.workers.dev`.
+- Gemini key stored as Cloudflare encrypted secret `GEMINI_API_KEY`.
+- APAC D1 database `agroman` created and migrated.
+- Six Earth Engine context/boundary rows dated 15 September 2026 reviewed and imported.
+- Live Firebase token, context and Gemini advisory smoke tests passed.
 
-1. **Enable anonymous authentication**
-   - Firebase Console → `smart-venue-orchestrator` → Build → Authentication → Get started/Sign-in method → Anonymous → Enable → Save.
-   - Phone/OTP authentication is intentionally outside Phase 1.
-2. **Enter the Gemini key privately when requested**
-   - Do not paste it into chat or Git.
-   - After explicitly authorizing the upload, enter it into the hidden terminal prompt opened for:
-     `npx wrangler secret put GEMINI_API_KEY --config worker/wrangler.jsonc`
+No purchased domain is required for the hackathon. The Firebase URL already contains AgroMan.
 
-That is all that blocks the first live API deployment.
+## Manual work still required later
 
-## Already completed
+Only account/security decisions require the project owner:
 
-- Firebase project and web app linked.
-- Firebase Hosting site created: `https://agroman-siddhant-rajput.web.app`.
-- Cloudflare CLI authorized on this device.
-- Cloudflare D1 database `agroman` created in APAC.
-- D1 schema applied successfully.
-- Worker configuration contains the real D1 ID and the AgroMan Hosting origin.
-- Firebase public web configuration saved only in ignored local configuration.
-- Builds, domain tests and mobile/desktop browser tests pass.
+1. Approve and configure Firebase App Check/reCAPTCHA after reviewing staging behavior.
+2. Perform DNS verification only if a purchased `.com` or `.in` domain is added.
+3. Approve expanded districts, refreshed observation dates and agronomic release evidence.
 
-## What Codex/development automation handles
+## Routine developer operations
 
-After the two manual items above, Codex can run these steps:
-
-1. Store the Gemini key in Cloudflare's encrypted Worker secret store.
-2. Deploy `agroman-api` to the account's `agroman.workers.dev` subdomain.
-3. Put the resulting API address into ignored local configuration.
-4. Build and deploy the PWA to `agroman-siddhant-rajput.web.app`.
-5. Run live authentication, API, image, consent and aggregate-report smoke tests.
-6. Commit and push configuration changes without secrets.
-
-## Later release work—not required for the first hackathon deployment
-
-### App Check
-
-App Check is intentionally optional during staging. After the hosted application works, register the web app with reCAPTCHA, observe its metrics, set `REQUIRE_APP_CHECK` to `true`, and redeploy the Worker. Codex can guide or perform the configuration while you approve account changes.
-
-### Earth Engine data
-
-Earth Engine registration is complete. The repository includes a script that exports real district observations into a reviewable D1 SQL file:
+Validate locally:
 
 ```sh
-python -m pip install -r scripts/requirements.txt
-python scripts/import_context.py --project smart-venue-orchestrator --date YYYY-MM-DD
+npm ci
+npm run check
+npm run test:e2e
 ```
 
-Codex can run this. You only need to approve the selected observation date and review the resulting sources/values before they become live. The script refuses to invent missing values. Modeled soil is regional context, not a farm laboratory measurement.
+Browser tests force `VITE_API_MODE=demo` through `.env.test`, so tests never consume live AI/data quotas. The ignored `.env.local` selects live mode for production builds.
 
-### Purchased custom domain
+Deploy the Worker and Hosting:
 
-No purchased domain is required for the hackathon. The chosen Firebase address already contains AgroMan:
+```sh
+npx wrangler deploy --config worker/wrangler.jsonc
+npm run build
+firebase deploy --only hosting --project smart-venue-orchestrator
+```
 
-`https://agroman-siddhant-rajput.web.app`
+Refresh Earth Engine context:
 
-If a purchased `.com` or `.in` domain is added later, DNS verification at the domain registrar is the one unavoidable manual action.
+```sh
+python scripts/import_context.py --project smart-venue-orchestrator --date YYYY-MM-DD
+npx wrangler d1 execute agroman --remote --file scripts/generated/context-YYYY-MM-DD.sql --config worker/wrangler.jsonc
+```
 
-## Safety rules
+Review every generated SQL file before import. The exporter refuses missing source observations rather than inventing values. Modeled soil is regional context, not a farm laboratory measurement.
 
-- Keep `VITE_API_MODE=demo` until the complete live smoke test passes.
+## Secrets and privacy
+
 - Never put Gemini keys, Cloudflare tokens, passwords or OTPs in source control or chat.
 - Never silently substitute synthetic data in live mode.
 - Images, audio and raw GPS coordinates must not be persisted or logged.
-- Phase 2 profiles, OTP login, crop history, insurance and export-demand features remain out of scope.
+- Rotate the Gemini key in Cloudflare **Workers & Pages → agroman-api → Settings → Variables and Secrets**.
+- Keep App Check optional only during staging; enforce it before broader public use.

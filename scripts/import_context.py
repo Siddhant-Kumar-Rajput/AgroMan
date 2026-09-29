@@ -82,7 +82,6 @@ def main():
     )
     statements = [
         "-- Review this generated file before applying it to D1.",
-        "BEGIN TRANSACTION;",
     ]
 
     for district_id, state, district in PILOTS:
@@ -131,7 +130,6 @@ def main():
             ]
         )
 
-    statements.append("COMMIT;")
     output.write_text("\n".join(statements) + "\n", encoding="utf-8")
     print(
         f"Exported {len(PILOTS)} real district rows dated {args.date} to {output}. "

@@ -17,7 +17,7 @@
     "FIREBASE_PROJECT_ID": "smart-venue-orchestrator",
     "FIREBASE_PROJECT_NUMBER": "391981839585",
     "FIREBASE_APP_ID": "1:391981839585:web:d5941cf904832418d3b3a0",
-    "GEMINI_MODEL": "gemini-3.8-flash",
+    "GEMINI_MODEL": "gemini-3.5-flash-lite",
     "ALLOWED_ORIGINS": "http://localhost:5173,https://agroman-siddhant-rajput.web.app,https://agroman-siddhant-rajput.firebaseapp.com",
     "REQUIRE_APP_CHECK": "false",
     "DAILY_REQUEST_LIMIT": "40",

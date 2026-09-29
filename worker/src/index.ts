@@ -399,8 +399,22 @@ async function generateAdvice(
       }),
     },
   );
-  if (!response.ok)
+  if (!response.ok) {
+    let providerStatus = "UNKNOWN";
+    try {
+      const failure = (await response.json()) as {
+        error?: { status?: string };
+      };
+      providerStatus = failure.error?.status || providerStatus;
+    } catch {
+      // The upstream body is intentionally not retained or logged.
+    }
+    console.error("Gemini request rejected", {
+      status: response.status,
+      providerStatus,
+    });
     throw new ApiError(503, "The advisory model is unavailable.");
+  }
   const result = (await response.json()) as {
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };

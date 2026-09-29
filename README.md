@@ -40,9 +40,9 @@ npm run dev -w worker
 
 ## Activation requirements and known limits
 
-Read [docs/SETUP.md](docs/SETUP.md) for the exact remaining account actions and deployment commands.
+Read [docs/SETUP.md](docs/SETUP.md) for the completed activation record and remaining release hardening.
 
-The Firebase project and web app are linked. Cloudflare deployment, Gemini secret entry, D1 creation, Anonymous Auth enablement, App Check and real Earth Engine data import still require activation or validation. Demo mode stays enabled until those checks pass.
+The live Phase 1 path is deployed at `https://agroman-siddhant-rajput.web.app`: Firebase Anonymous Auth, the Cloudflare Worker/D1 API, six reviewed Earth Engine district records and Gemini advisory requests have passed live smoke tests. App Check remains deliberately disabled during staging and is a release-hardening task.
 
 The pilot registry currently contains **six districts**: Ludhiana, Amritsar, Lucknow, Varanasi, Pune and Nashik. This is representative coverage of three states, not full-state coverage. Expanding the registry and verifying district boundary aliases remains data work.
 

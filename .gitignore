@@ -15,6 +15,7 @@ scripts/generated/
 *-debug.log
 test-results/
 playwright-report/
+public/espeak/
 *.tsbuildinfo
 __pycache__/
 *.pyc

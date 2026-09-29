@@ -130,3 +130,37 @@ test("language coverage is honest and layout fits the viewport", async ({
     ),
   ).toBe(true);
 });
+
+test("Hindi read aloud loads the on-device fallback", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop");
+  test.setTimeout(60000);
+  await page.addInitScript(() => {
+    Object.defineProperty(window.speechSynthesis, "getVoices", {
+      configurable: true,
+      value: () => [],
+    });
+  });
+  await page.goto("/");
+  await page.getByLabel("Language", { exact: true }).selectOption("hi");
+  await page
+    .getByRole("button", { name: "Meet your farm advisor" })
+    .first()
+    .click();
+  await page.getByRole("textbox").fill("मेरी फसल की देखभाल कैसे करूँ?");
+  await page.getByRole("button", { name: "Send message", exact: true }).click();
+  await expect(
+    page.getByText("Demonstration response for Ludhiana"),
+  ).toBeVisible();
+  const dataRequest = page.waitForResponse(
+    (response) => response.url().endsWith("/espeak/espeak-ng.data"),
+    { timeout: 45000 },
+  );
+  await page.getByRole("button", { name: "Read aloud" }).click();
+  expect((await dataRequest).ok()).toBe(true);
+  await expect(page.getByText("Preparing voice…")).toHaveCount(0, {
+    timeout: 45000,
+  });
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});

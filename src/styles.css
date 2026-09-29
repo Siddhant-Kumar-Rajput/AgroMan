@@ -770,6 +770,17 @@ footer > span {
 .diagnosis small {
   color: #81896f;
 }
+.visual-evidence {
+  margin-top: 5px;
+  font-size: 12px;
+}
+.visual-evidence ul {
+  margin: 5px 0 0;
+  padding-inline-start: 18px;
+}
+.visual-evidence li + li {
+  margin-top: 4px;
+}
 .composer {
   border: 1px solid #d3dac8;
   border-radius: 10px;

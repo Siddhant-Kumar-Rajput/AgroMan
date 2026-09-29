@@ -8,7 +8,10 @@
     "worker"
   ],
   "scripts": {
+    "prepare:speech": "node scripts/copy-espeak.mjs",
+    "predev": "npm run prepare:speech",
     "dev": "vite --host 127.0.0.1",
+    "prebuild": "npm run prepare:speech",
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
@@ -16,6 +19,7 @@
     "preview": "vite preview --host 127.0.0.1"
   },
   "dependencies": {
+    "@echogarden/espeak-ng-emscripten": "^0.3.5",
     "@gsap/react": "^2.1.2",
     "firebase": "^12.0.0",
     "gsap": "^3.13.0",

@@ -103,7 +103,8 @@ export const english = {
   rotation:
     "Starting a new conversation will remove the oldest of your three saved conversations. Continue?",
   voiceUnavailable:
-    "Voice is unavailable for this language or in demonstration mode.",
+    "Read aloud is not yet available for this language on this device.",
+  voiceLoading: "Preparing voice…",
   translationPending:
     "This language needs the cloud translation service. English is shown until it is connected.",
   setup: "Connection guide",
@@ -122,6 +123,7 @@ export const english = {
     "Select your district manually. Automatic GPS district matching is not configured yet.",
   confidence: "Model confidence",
   notDiagnosis: "An AI suggestion, not a confirmed diagnosis.",
+  whatISee: "What I can see in the photo",
   threadLocation:
     "This conversation uses the region selected when it was created.",
   languageBusy: "Loading language…",

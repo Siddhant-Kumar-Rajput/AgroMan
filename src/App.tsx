@@ -50,35 +50,11 @@ import {
 } from "./lib/api";
 import { readThreads, saveThreads } from "./lib/storage";
 import { english, type Copy } from "./lib/i18n";
+import { speakText, stopSpeech } from "./lib/speech";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 type Page = "home" | "advisor" | "community" | "authority";
 const photo =
   "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85";
-const speechLocales: Record<string, string> = {
-  en: "en-IN",
-  as: "as-IN",
-  bn: "bn-IN",
-  brx: "brx-IN",
-  doi: "doi-IN",
-  gu: "gu-IN",
-  hi: "hi-IN",
-  kn: "kn-IN",
-  ks: "ks-IN",
-  kok: "kok-IN",
-  mai: "mai-IN",
-  ml: "ml-IN",
-  "mni-Mtei": "mni-IN",
-  mr: "mr-IN",
-  ne: "ne-NP",
-  or: "or-IN",
-  pa: "pa-IN",
-  sa: "sa-IN",
-  sat: "sat-IN",
-  sd: "sd-IN",
-  ta: "ta-IN",
-  te: "te-IN",
-  ur: "ur-IN",
-};
 export default function App() {
   const [page, setPage] = useState<Page>("home");
   const [districtId, setDistrictId] = useState(() => {
@@ -104,6 +80,7 @@ export default function App() {
   const [menu, setMenu] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [recording, setRecording] = useState(false);
+  const [voiceBusy, setVoiceBusy] = useState(false);
   const [liveClusters, setLiveClusters] = useState<
     ReturnType<typeof clusterReports>
   >([]);
@@ -142,7 +119,7 @@ export default function App() {
       window.removeEventListener("offline", update);
       clearTimeout(recordTimer.current);
       recorder.current?.stream.getTracks().forEach((track) => track.stop());
-      window.speechSynthesis?.cancel();
+      stopSpeech();
     };
   }, []);
   useEffect(() => {
@@ -392,28 +369,16 @@ export default function App() {
     }
     if (fileRef.current) fileRef.current.value = "";
   }
-  function speak(text: string) {
-    if (!("speechSynthesis" in window)) {
+  async function speak(text: string) {
+    setError("");
+    setVoiceBusy(true);
+    try {
+      if (!(await speakText(text, locale))) setError(t("voiceUnavailable"));
+    } catch {
       setError(t("voiceUnavailable"));
-      return;
+    } finally {
+      setVoiceBusy(false);
     }
-    const language = speechLocales[locale] ?? locale;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = language;
-    const voices = window.speechSynthesis.getVoices();
-    const voice = voices.find(
-      (candidate) =>
-        candidate.lang.toLowerCase() === language.toLowerCase() ||
-        candidate.lang.toLowerCase().startsWith(`${locale.toLowerCase()}-`),
-    );
-    if (voices.length && !voice) {
-      setError(t("voiceUnavailable"));
-      return;
-    }
-    if (voice) utterance.voice = voice;
-    utterance.onerror = () => setError(t("voiceUnavailable"));
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
   }
   async function record() {
     if (demo) {
@@ -924,6 +889,18 @@ export default function App() {
                           {Math.round(message.diagnosis.confidence * 100)}%
                         </span>
                         <small>{t("notDiagnosis")}</small>
+                        {message.diagnosis.evidence.length > 0 && (
+                          <div className="visual-evidence">
+                            <b>{t("whatISee")}</b>
+                            <ul>
+                              {message.diagnosis.evidence
+                                .slice(0, 3)
+                                .map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))}
+                            </ul>
+                          </div>
+                        )}
                         {message.diagnosis.confidence >= 0.75 && (
                           <button
                             className="text-button"
@@ -945,10 +922,15 @@ export default function App() {
                     {message.role === "assistant" && (
                       <button
                         className="audio-button"
-                        onClick={() => speak(message.text)}
+                        disabled={voiceBusy}
+                        onClick={() => void speak(message.text)}
                       >
-                        <Volume2 size={15} />
-                        {t("listen")}
+                        {voiceBusy ? (
+                          <Loader2 className="spin" size={15} />
+                        ) : (
+                          <Volume2 size={15} />
+                        )}
+                        {voiceBusy ? t("voiceLoading") : t("listen")}
                       </button>
                     )}
                   </article>

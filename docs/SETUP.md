@@ -1,106 +1,72 @@
-# Manual setup and live activation
+# AgroMan activation checklist
 
-AgroMan uses Firebase for the web app, anonymous identity and hosting. Cloudflare provides the Worker API, D1 database, speech recognition and Indic translation. Gemini provides advisory and image analysis. This avoids the paid Google Speech, Text-to-Speech, Translation, Functions and Secret Manager services.
+Most setup is handled from the repository or deployment CLI. You do **not** need to run every command in this file yourself.
 
-Never paste API keys, passwords, OTPs or access tokens into chat or commit them to Git.
+## What you must do manually
 
-## 1. Firebase console
+Only account-owner actions or secret entry require you:
 
-Project: `smart-venue-orchestrator`.
+1. **Enable anonymous authentication**
+   - Firebase Console → `smart-venue-orchestrator` → Build → Authentication → Get started/Sign-in method → Anonymous → Enable → Save.
+   - Phone/OTP authentication is intentionally outside Phase 1.
+2. **Enter the Gemini key privately when requested**
+   - Do not paste it into chat or Git.
+   - After explicitly authorizing the upload, enter it into the hidden terminal prompt opened for:
+     `npx wrangler secret put GEMINI_API_KEY --config worker/wrangler.jsonc`
 
-1. Open **Build → Authentication → Sign-in method** and enable **Anonymous**. Phone/OTP is not part of Phase 1.
-2. Keep the registered web app named **AgroMan Web**.
-3. App Check can wait until the production hostname is working. Later, register the web app with reCAPTCHA, add the exact production domains, test metrics, then change `REQUIRE_APP_CHECK` to `true` in `worker/wrangler.jsonc` and redeploy.
-4. Billing is not required for Firebase Hosting's no-cost allowance or Firebase Authentication used here. Review current quotas before launch.
+That is all that blocks the first live API deployment.
 
-The ignored `.env.local` holds only Firebase's public web configuration and the API URL. Vite-prefixed values are browser-visible; never place the Gemini key there. Keep `VITE_API_MODE=demo` until the live smoke test succeeds.
+## Already completed
 
-## 2. Cloudflare authorization and D1
+- Firebase project and web app linked.
+- Firebase Hosting site created: `https://agroman-siddhant-rajput.web.app`.
+- Cloudflare CLI authorized on this device.
+- Cloudflare D1 database `agroman` created in APAC.
+- D1 schema applied successfully.
+- Worker configuration contains the real D1 ID and the AgroMan Hosting origin.
+- Firebase public web configuration saved only in ignored local configuration.
+- Builds, domain tests and mobile/desktop browser tests pass.
 
-The device does not need to remain connected after deployment. Use one of these local authorization methods:
+## What Codex/development automation handles
 
-- Interactive: `npx wrangler login`
-- Automation: set a narrowly scoped `CLOUDFLARE_API_TOKEN` in your local shell or deployment provider; do not commit it.
+After the two manual items above, Codex can run these steps:
 
-Then create and configure D1:
+1. Store the Gemini key in Cloudflare's encrypted Worker secret store.
+2. Deploy `agroman-api` to the account's `agroman.workers.dev` subdomain.
+3. Put the resulting API address into ignored local configuration.
+4. Build and deploy the PWA to `agroman-siddhant-rajput.web.app`.
+5. Run live authentication, API, image, consent and aggregate-report smoke tests.
+6. Commit and push configuration changes without secrets.
 
-```sh
-npx wrangler whoami
-npx wrangler d1 create agroman --location=apac
-```
+## Later release work—not required for the first hackathon deployment
 
-Copy the returned database ID into `worker/wrangler.jsonc`, replacing the all-zero placeholder. Apply the schema:
+### App Check
 
-```sh
-npx wrangler d1 migrations apply agroman --remote --config worker/wrangler.jsonc
-```
+App Check is intentionally optional during staging. After the hosted application works, register the web app with reCAPTCHA, observe its metrics, set `REQUIRE_APP_CHECK` to `true`, and redeploy the Worker. Codex can guide or perform the configuration while you approve account changes.
 
-## 3. Gemini secret
+### Earth Engine data
 
-The same Gemini API key can call the enabled Gemini models; a different key per Gemini feature is unnecessary. Separate development and production keys are still recommended for rotation and quota visibility.
-
-Enter it directly into Wrangler's hidden prompt:
-
-```sh
-npx wrangler secret put GEMINI_API_KEY --config worker/wrangler.jsonc
-```
-
-The source contains no Gemini key. Cloudflare encrypts the Worker secret. Confirm the model identifier in `worker/wrangler.jsonc` exists for the key before deployment.
-
-## 4. Earth Engine context export
-
-Earth Engine registration is reported complete. Install the operator script dependency, authenticate Earth Engine if prompted, and create a reviewable D1 SQL file:
+Earth Engine registration is complete. The repository includes a script that exports real district observations into a reviewable D1 SQL file:
 
 ```sh
 python -m pip install -r scripts/requirements.txt
 python scripts/import_context.py --project smart-venue-orchestrator --date YYYY-MM-DD
 ```
 
-Use a historical date with complete observations; the default is 14 days ago. The script reads OpenLandMap modeled pH, CHIRPS rainfall, SMAP moisture and GAUL boundaries. It stops rather than inventing unavailable values. Modeled soil is a regional baseline, not a laboratory farm measurement.
+Codex can run this. You only need to approve the selected observation date and review the resulting sources/values before they become live. The script refuses to invent missing values. Modeled soil is regional context, not a farm laboratory measurement.
 
-Review the generated file, then apply it explicitly:
+### Purchased custom domain
 
-```sh
-npx wrangler d1 execute agroman --remote --file scripts/generated/context-YYYY-MM-DD.sql --config worker/wrangler.jsonc
-```
+No purchased domain is required for the hackathon. The chosen Firebase address already contains AgroMan:
 
-Generated data is ignored by Git. Verify licensing, district aliases, dates, units and boundary alignment before enabling live location lookup.
+`https://agroman-siddhant-rajput.web.app`
 
-## 5. Deploy and test the API
+If a purchased `.com` or `.in` domain is added later, DNS verification at the domain registrar is the one unavoidable manual action.
 
-```sh
-npm run check
-npm run test:e2e
-npx wrangler deploy --config worker/wrangler.jsonc
-```
+## Safety rules
 
-Record the resulting `https://...workers.dev` URL. Put it in ignored `.env.local` as `VITE_API_BASE_URL`, switch `VITE_API_MODE=live`, rebuild, and perform this live smoke test:
-
-anonymous sign-in → location/context → Gemini text reply → photo uncertainty result → consent → metadata-only report → aggregate outbreak view.
-
-Also test translation and microphone behavior on each target device/language. Browser/device voices determine text-to-speech coverage. Ensure images, audio, raw coordinates, prompts and response bodies do not appear in application logs.
-
-## 6. Firebase Hosting
-
-Build and deploy only Hosting; `firebase.json` intentionally does not deploy Cloud Functions:
-
-```sh
-npm run build
-firebase deploy --only hosting --project smart-venue-orchestrator
-```
-
-Test the generated `web.app` hostname first. After it works, Firebase Console → Hosting → **Add custom domain**. The complete owned domain is still needed; `agroman.....` is not actionable. Firebase will show the exact DNS TXT/A records to add at the registrar and will provision HTTPS after verification.
-
-Add both the Firebase hostname and final custom domain to:
-
-- Firebase Authentication → Settings → Authorized domains.
-- App Check's allowed domains when App Check is activated.
-- `ALLOWED_ORIGINS` in `worker/wrangler.jsonc`, followed by a Worker redeploy.
-
-## Release gates
-
-- Do not switch out of demonstration mode until Worker, D1, auth, origin restrictions and real context all pass staging tests.
-- Verify Cloudflare and Gemini quotas; rate limits reduce exposure but are not a global spending cap.
-- Have agronomic recommendations reviewed against authoritative evidence before field use.
-- Anonymous installation identity reduces casual duplicate reports but does not prove distinct farmers.
+- Keep `VITE_API_MODE=demo` until the complete live smoke test passes.
+- Never put Gemini keys, Cloudflare tokens, passwords or OTPs in source control or chat.
+- Never silently substitute synthetic data in live mode.
+- Images, audio and raw GPS coordinates must not be persisted or logged.
 - Phase 2 profiles, OTP login, crop history, insurance and export-demand features remain out of scope.

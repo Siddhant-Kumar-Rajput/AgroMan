@@ -49,7 +49,7 @@ The pilot registry currently contains **six districts**: Ludhiana, Amritsar, Luc
 
 All 22 scheduled Indian languages plus English are selectable. Live UI translation uses the Cloudflare AI4Bharat IndicTrans2 model where supported; English remains the honest fallback. Fonts, translated names, errors and linguistic accuracy must be reviewed by speakers before claiming full support. Speech input uses Whisper. Speech output prefers a device voice, then Sarvam Bulbul v3 for Hindi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Marathi, Punjabi and Odia, with eSpeak as the offline/quota fallback. Other languages still depend on a compatible device or eSpeak voice and must not be described as neural coverage.
 
-The community visualization is a labeled schematic, not a geographic basemap. Raw reports and installation identifiers are never returned to the browser in live mode. Confidence is an uncalibrated AI score, not diagnostic certainty; outbreak clusters are unverified signals.
+Community Watch plots aggregate signals by centroid inside a reviewed district boundary. The boundary is contextual rather than a turn-by-turn navigation map, and the optional example preview is visibly labelled synthetic. Raw reports and installation identifiers are never returned to the browser in live mode. Confidence is an uncalibrated AI score, not diagnostic certainty; outbreak clusters are unverified signals.
 
 No current-weather integration, curated crop evidence library, NDVI dashboard, Agmarknet nudge or live camera stream is included yet. No Phase 2 identity or farm records are included.
 

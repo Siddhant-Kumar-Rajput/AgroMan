@@ -915,9 +915,18 @@ footer > span {
   border-top: 1px solid var(--line);
   padding-top: 20px;
 }
-.watch-toolbar > span {
+.watch-toolbar > span,
+.watch-controls > span {
   font-size: 11px;
   color: #8a917c;
+}
+.watch-controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.example-toggle {
+  padding: 7px 0;
 }
 .demo-banner {
   background: #eef0e3;
@@ -939,54 +948,62 @@ footer > span {
   position: relative;
   min-height: 365px;
   border-radius: 10px;
-  background: #e6e9db;
+  background: #e9ecdf;
   overflow: hidden;
   border: 1px solid #d6ddc9;
 }
-.map-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(
-      27deg,
-      transparent 40%,
-      #d8dfca 40%,
-      #d8dfca 60%,
-      transparent 60%
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 68px,
-      #cdd6bd 70px,
-      transparent 72px
-    );
-  opacity: 0.75;
+.district-map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 365px;
 }
-.river {
-  position: absolute;
-  width: 90px;
-  height: 160%;
-  top: -30%;
-  left: 65%;
-  background: #cadad3;
-  border: 5px solid #d7e0d7;
-  transform: rotate(27deg);
-  border-radius: 40%;
+.geo-grid {
+  fill: url(#geo-grid);
 }
-.map-road {
-  position: absolute;
-  background: #f8f7ec;
-  border: 1px solid #dcdcc8;
-  width: 130%;
-  height: 11px;
-  left: -15%;
-  top: 65%;
-  transform: rotate(-22deg);
+#geo-grid path {
+  stroke: #d4dbc7;
+  stroke-width: 1;
 }
-.road-two {
-  top: 30%;
-  transform: rotate(33deg);
+.district-boundary {
+  fill: #d8e1ca;
+  fill-opacity: 0.82;
+  stroke: #70885c;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.fallback-boundary {
+  stroke-dasharray: 7 7;
+  fill-opacity: 0.35;
+}
+.geo-marker .marker-halo {
+  fill: #587345;
+  opacity: 0.17;
+}
+.geo-marker .marker-core {
+  fill: #587345;
+  stroke: #f5f6ef;
+  stroke-width: 3;
+}
+.geo-marker.watch .marker-core {
+  fill: #a17b3d;
+}
+.geo-marker.potential .marker-core {
+  fill: #a9503c;
+}
+.geo-marker text {
+  fill: white;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.north-marker path {
+  fill: #536649;
+}
+.north-marker text {
+  fill: #6f7b65;
+  font-size: 10px;
+  font-weight: 700;
 }
 .map-label {
   position: absolute;
@@ -1000,32 +1017,6 @@ footer > span {
   display: block;
   margin-top: 4px;
   color: #879079;
-}
-.map-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-}
-.map-marker > span {
-  height: 55px;
-  width: 55px;
-  background: #587345;
-  color: white;
-  border: 7px solid #becda9;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 0 0 17px #69854920;
-  font-size: 17px;
-}
-.map-marker small {
-  margin-top: 15px;
-  padding: 5px 10px;
-  background: #ffffffb3;
-  border-radius: 3px;
-  font-size: 10px;
 }
 .map-caption {
   position: absolute;
@@ -1422,6 +1413,11 @@ footer > span {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  .watch-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
   .watch-grid {
     grid-template-columns: 1fr;

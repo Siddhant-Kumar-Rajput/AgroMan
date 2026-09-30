@@ -141,6 +141,11 @@ export type Cluster = {
   status: "observation" | "watch" | "potential";
   origin: "demo" | "live";
 };
+export type GeoPoint = [number, number];
+export type GeoPolygon = GeoPoint[][];
+export type DistrictGeometry =
+  | { type: "Polygon"; coordinates: GeoPolygon }
+  | { type: "MultiPolygon"; coordinates: GeoPolygon[] };
 export function distanceKm(
   a: { lat: number; lon: number },
   b: { lat: number; lon: number },
@@ -182,8 +187,8 @@ export function clusterReports(reports: Report[], now = Date.now()): Cluster[] {
       districtId: g[0].districtId,
       name: g[0].name,
       count,
-      lat: g[0].lat,
-      lon: g[0].lon,
+      lat: g.reduce((sum, report) => sum + report.lat, 0) / g.length,
+      lon: g.reduce((sum, report) => sum + report.lon, 0) / g.length,
       status: count >= 3 ? "potential" : count === 2 ? "watch" : "observation",
       origin: g[0].origin,
     };

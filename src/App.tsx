@@ -35,6 +35,7 @@ import {
   rotateThreads,
   turns,
   type Context,
+  type DistrictGeometry,
   type Message,
   type Report,
   type Thread,
@@ -51,6 +52,7 @@ import {
 import { readThreads, saveThreads } from "./lib/storage";
 import { english, type Copy } from "./lib/i18n";
 import { speakText, stopSpeech } from "./lib/speech";
+import { DistrictMap } from "./components/DistrictMap";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 type Page = "home" | "advisor" | "community" | "authority";
 const photo =
@@ -81,6 +83,8 @@ export default function App() {
   const [online, setOnline] = useState(navigator.onLine);
   const [recording, setRecording] = useState(false);
   const [voiceBusy, setVoiceBusy] = useState(false);
+  const [boundary, setBoundary] = useState<DistrictGeometry>();
+  const [showExamples, setShowExamples] = useState(false);
   const [liveClusters, setLiveClusters] = useState<
     ReturnType<typeof clusterReports>
   >([]);
@@ -97,6 +101,10 @@ export default function App() {
   const district = districts.find((d) => d.id === districtId) ?? districts[0];
   const current = threads.find((thread) => thread.id === active);
   const clusters = demo ? clusterReports(reports) : liveClusters;
+  const watchClusters = showExamples
+    ? clusterReports(demoReports(districtId))
+    : clusters;
+  const syntheticWatch = demo || showExamples;
   const atLimit = current ? turns(current) >= MAX_TURNS : false;
   useEffect(() => {
     readThreads()
@@ -131,6 +139,8 @@ export default function App() {
   useEffect(() => {
     let cancelled = false;
     setRegion(undefined);
+    setBoundary(undefined);
+    setShowExamples(false);
     localStorage.setItem("agroman-district", districtId);
     context(districtId)
       .then((value) => {
@@ -140,7 +150,7 @@ export default function App() {
         if (!cancelled) setError(e.message);
       });
     if (demo) setReports(demoReports(districtId));
-    else
+    else {
       request<{ clusters: ReturnType<typeof clusterReports> }>(
         `outbreaks/nearby?districtId=${encodeURIComponent(districtId)}`,
       )
@@ -150,6 +160,16 @@ export default function App() {
         .catch((e) => {
           if (!cancelled) setError(e.message);
         });
+      request<{ geometry: DistrictGeometry }>(
+        `districts/boundary?districtId=${encodeURIComponent(districtId)}`,
+      )
+        .then((value) => {
+          if (!cancelled) setBoundary(value.geometry);
+        })
+        .catch((e) => {
+          if (!cancelled) setError(e.message);
+        });
+    }
     return () => {
       cancelled = true;
     };
@@ -493,14 +513,19 @@ export default function App() {
       setError((e as Error).message);
     }
   }
-  function download() {
+  function download(
+    selectedClusters = clusters,
+    origin: "live" | "synthetic demonstration" = demo
+      ? "synthetic demonstration"
+      : "live",
+  ) {
     const content = JSON.stringify(
       {
         notice:
           "Unverified potential disease signals. Not confirmed outbreaks.",
-        origin: demo ? "synthetic demonstration" : "live",
+        origin,
         exportedAt: new Date().toISOString(),
-        clusters,
+        clusters: selectedClusters,
       },
       null,
       2,
@@ -1044,7 +1069,15 @@ export default function App() {
                 </p>
               </div>
               {page === "authority" ? (
-                <button className="primary" onClick={download}>
+                <button
+                  className="primary"
+                  onClick={() =>
+                    download(
+                      watchClusters,
+                      syntheticWatch ? "synthetic demonstration" : "live",
+                    )
+                  }
+                >
                   <Download size={17} />
                   {t("download")}
                 </button>
@@ -1057,45 +1090,37 @@ export default function App() {
             </div>
             <div className="watch-toolbar">
               {locationSelector}
-              <span>{t("window")}</span>
+              <div className="watch-controls">
+                <span>{t("window")}</span>
+                {!demo && (
+                  <button
+                    className="text-button example-toggle"
+                    onClick={() => setShowExamples((value) => !value)}
+                  >
+                    {showExamples ? t("showLive") : t("previewExamples")}
+                  </button>
+                )}
+              </div>
             </div>
-            {demo && (
+            {syntheticWatch && (
               <div className="demo-banner">
                 <ShieldCheck size={17} />
-                {t("synthetic")} — {t("reportNotice")}
+                {t("synthetic")} — {t("exampleExplanation")}
               </div>
             )}
             <div className="watch-grid">
-              <div
-                className="district-map"
-                role="img"
-                aria-label={`Schematic observation area for ${district.name}; not a geographic basemap`}
-              >
-                <div className="map-grid" />
-                <div className="river" />
-                <div className="map-road road-one" />
-                <div className="map-road road-two" />
-                <div className="map-label">
-                  {district.name}
-                  <small>{district.state}</small>
-                </div>
-                {clusters.map((cluster, i) => (
-                  <div
-                    className="map-marker"
-                    key={cluster.id}
-                    style={{ left: `${45 + i * 12}%`, top: `${45 + i * 8}%` }}
-                  >
-                    <span>{cluster.count}</span>
-                    <small>{cluster.name}</small>
-                  </div>
-                ))}
-                <span className="map-caption">{t("schematic")}</span>
-              </div>
+              <DistrictMap
+                district={district}
+                geometry={boundary}
+                clusters={watchClusters}
+                caption={t("mapCaption")}
+                ariaLabel={`${t("mapLabel")} ${district.name}`}
+              />
               <div className="incident-list">
-                {!clusters.length ? (
+                {!watchClusters.length ? (
                   <p>{t("noReports")}</p>
                 ) : (
-                  clusters.map((cluster) => (
+                  watchClusters.map((cluster) => (
                     <article className="incident" key={cluster.id}>
                       <span className={`incident-status ${cluster.status}`}>
                         <span />

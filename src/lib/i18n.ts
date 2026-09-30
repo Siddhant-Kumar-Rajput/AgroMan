@@ -5,6 +5,8 @@ export const english = {
   landscapeLead: "Grounded in nature.",
   landscapeEnd: "Guided by understanding.",
   schematic: "Approximate area · schematic view",
+  mapCaption: "Reviewed district boundary · generalized signal locations",
+  mapLabel: "Geographic district view for",
   photoPrompt: "Please assess this plant photo and explain what to do next.",
   skip: "Skip to content",
   navigation: "Main navigation",
@@ -85,6 +87,10 @@ export const english = {
   watchCopy:
     "See potential disease clusters reported across your growing community.",
   synthetic: "Synthetic demonstration reports",
+  previewExamples: "Preview example signals",
+  showLive: "Return to live reports",
+  exampleExplanation:
+    "Labelled examples for testing the clustering interface; not farmer reports or a real outbreak.",
   reports: "Distinct installations",
   potential: "Potential outbreak",
   watch: "Under observation",

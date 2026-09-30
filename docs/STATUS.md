@@ -18,12 +18,17 @@ The Phase 1 live foundation is deployed. This is not yet a claim of agronomic pr
   speech in ten Indian languages plus English, and retains an on-device eSpeak
   fallback for outages, quota exhaustion and additional languages.
 - A public mobile-browser smoke test verified a Hindi Sarvam response, decoded
-  31-second audio and no eSpeak fallback request.
+  21.7-second audio and no eSpeak fallback request.
+- Community Watch renders reviewed district geometry and coordinate-derived
+  aggregate centroids. Its public judge-safe example control is explicitly
+  labelled synthetic and never inserts dummy reports into D1.
+- The public mobile-browser smoke test verified the live district boundary and
+  the labelled Community Watch example flow.
 
 ## Local verification
 
 - Frontend, legacy safety backend and Cloudflare Worker compile.
-- Nine domain tests pass.
+- Ten domain tests pass, including aggregate-centroid placement.
 - Eleven Playwright flows pass across desktop and mobile in explicitly isolated
   demonstration-test mode; the duplicated mobile speech-engine download check
   is intentionally skipped.

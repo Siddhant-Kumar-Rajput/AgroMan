@@ -672,6 +672,23 @@ async function route(request: Request, env: Env) {
     ]);
     return json(request, env, { ok: true });
   }
+  if (request.method === "GET" && path === "districts/boundary") {
+    const districtId = districtSchema.parse(url.searchParams.get("districtId"));
+    const row = await env.DB.prepare(
+      "SELECT geometry_json FROM district_boundaries WHERE district_id = ?",
+    )
+      .bind(districtId)
+      .first<{ geometry_json: string }>();
+    if (!row)
+      throw new ApiError(
+        404,
+        "No reviewed boundary is available for this district.",
+      );
+    return json(request, env, {
+      districtId,
+      geometry: JSON.parse(row.geometry_json) as Geometry,
+    });
+  }
   if (
     request.method === "GET" &&
     (path === "outbreaks/nearby" || path === "authority/outbreaks")

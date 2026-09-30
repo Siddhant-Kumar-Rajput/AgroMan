@@ -76,6 +76,18 @@ describe("outbreak detection", () => {
       clusterReports([report("1", { confidence: 0.75 })], now),
     ).toHaveLength(1);
   });
+  it("places an aggregate signal at its reports' geographic centroid", () => {
+    const [cluster] = clusterReports(
+      [
+        report("1", { lat: 30.9, lon: 75.8 }),
+        report("2", { lat: 30.92, lon: 75.84 }),
+        report("3", { lat: 30.94, lon: 75.88 }),
+      ],
+      now,
+    );
+    expect(cluster.lat).toBeCloseTo(30.92, 5);
+    expect(cluster.lon).toBeCloseTo(75.84, 5);
+  });
   it("calculates geographic distance", () => {
     expect(distanceKm({ lat: 0, lon: 0 }, { lat: 1, lon: 0 })).toBeCloseTo(
       111.19,

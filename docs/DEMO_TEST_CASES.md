@@ -68,18 +68,21 @@ Expected result:
 
 ## Farmer 4 — community disease watch in Nashik
 
-| Item          | Demo input                                      |
-| ------------- | ----------------------------------------------- |
-| Region        | Nashik, Maharashtra                             |
-| Language      | English or Marathi                              |
-| Action        | Open **Community watch** after selecting Nashik |
-| Feature shown | Anonymous, aggregated outbreak signals          |
+| Item          | Demo input                                                        |
+| ------------- | ----------------------------------------------------------------- |
+| Region        | Nashik, Maharashtra                                               |
+| Language      | English or Marathi                                                |
+| Action        | Open **Community watch**, then select **Preview example signals** |
+| Feature shown | Anonymous, aggregated outbreak signals                            |
 
 Expected result:
 
 - The page shows only the selected district's recent aggregated observations.
-- With no qualifying reports, it honestly says no qualifying observations are
-  available; it must not manufacture an outbreak for the video.
+- With no qualifying live reports, it honestly says no qualifying observations
+  are available. **Preview example signals** then shows clearly labelled
+  synthetic clusters without inserting fake farmer reports into the database.
+- The markers appear at geographic coordinates inside the reviewed Nashik
+  district boundary; they are not decorative or list-positioned markers.
 - If reports exist, they are labelled as observation, under observation, or a
   potential outbreak—not as a confirmed outbreak.
 - No farmer name, profile, raw photo, or exact GPS coordinate is displayed.

@@ -107,6 +107,12 @@ test("community and authority expose only labeled demo signals", async ({
   await page.getByRole("button", { name: "Explore community watch" }).click();
   await expect(page.getByText("Synthetic demonstration reports")).toBeVisible();
   await expect(
+    page.getByRole("img", {
+      name: "Geographic district view for Ludhiana",
+    }),
+  ).toBeVisible();
+  await expect(page.locator(".geo-marker")).toHaveCount(1);
+  await expect(
     page.getByText("Potential outbreak", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Authority view" }).click();

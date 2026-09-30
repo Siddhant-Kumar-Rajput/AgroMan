@@ -25,10 +25,25 @@ try {
     };
   });
   await page.goto(site, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Explore community watch" }).click();
+  const boundary = page.locator("path.district-boundary");
+  await boundary.waitFor({ timeout: 10000 });
+  const boundaryPath = await boundary.getAttribute("d");
+  if (!boundaryPath || boundaryPath.length < 50)
+    throw new Error("The live district boundary did not render.");
+  await page.getByRole("button", { name: "Preview example signals" }).click();
   await page
-    .getByRole("button", { name: "Meet your farm advisor" })
-    .first()
-    .click();
+    .getByText(
+      "Labelled examples for testing the clustering interface; not farmer reports or a real outbreak.",
+      { exact: false },
+    )
+    .waitFor();
+  const exampleMarkerCount = await page.locator(".geo-marker").count();
+  if (!exampleMarkerCount)
+    throw new Error("The labelled community example did not render a marker.");
+  await page.getByRole("button", { name: "Return to live reports" }).click();
+  await page.getByRole("button", { name: "Toggle navigation" }).click();
+  await page.getByRole("button", { name: "Farm advisor" }).first().click();
   const encoded = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 64;
@@ -110,6 +125,8 @@ try {
     JSON.stringify({
       liveImagePipeline: "passed",
       insufficientPhotoRejected: true,
+      communityGeographicBoundary: "passed",
+      communityExamplePreview: "passed",
       responseCharacters: result.text.length,
       hindiResponse: "passed",
       hindiNaturalSpeech: "passed",

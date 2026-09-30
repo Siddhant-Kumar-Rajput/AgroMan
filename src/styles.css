@@ -625,6 +625,9 @@ footer > span {
   gap: 10px;
   margin: 14px 0 20px;
 }
+.metrics > div {
+  min-width: 0;
+}
 .metrics small {
   font-size: 10px;
   color: #7f876f;
@@ -632,8 +635,14 @@ footer > span {
   margin-bottom: 6px;
 }
 .metrics strong {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   font-weight: 400;
-  font-size: 28px;
+  font-size: clamp(22px, 2.15vw, 28px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 .metrics i {
   font-size: 11px;
@@ -1141,6 +1150,10 @@ footer > span {
   }
   .sidebar {
     padding: 28px 17px;
+  }
+  .metrics {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
   .chat {
     padding: 28px 4%;

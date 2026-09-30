@@ -52,6 +52,7 @@ import {
 import { readThreads, saveThreads } from "./lib/storage";
 import { english, type Copy } from "./lib/i18n";
 import { speakText, stopSpeech } from "./lib/speech";
+import { formatMetric } from "./lib/format";
 import { DistrictMap } from "./components/DistrictMap";
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 type Page = "home" | "advisor" | "community" | "authority";
@@ -828,12 +829,12 @@ export default function App() {
                 <div className="metrics">
                   <div>
                     <small>{t("ph")}</small>
-                    <strong>{region?.soilPh ?? "—"}</strong>
+                    <strong>{formatMetric(region?.soilPh, locale)}</strong>
                   </div>
                   <div>
                     <small>{t("rain")}</small>
                     <strong>
-                      {region?.rainfallMm ?? "—"}
+                      {formatMetric(region?.rainfallMm, locale)}
                       <i> mm</i>
                     </strong>
                   </div>

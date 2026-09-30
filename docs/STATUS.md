@@ -14,19 +14,27 @@ The Phase 1 live foundation is deployed. This is not yet a claim of agronomic pr
 - Gemini secret stored encrypted in Cloudflare; no key is committed locally.
 - `gemini-3.5-flash-lite` selected after a live compatibility test; authenticated advisory returned 200 with a valid response.
 - Public mobile-browser test confirmed the connected-services build and a live advisory response with no console errors.
-- Browser-native text-to-speech avoids paid Google TTS.
+- Read aloud prefers a browser-native voice, uses Sarvam Bulbul v3 for natural
+  speech in ten Indian languages plus English, and retains an on-device eSpeak
+  fallback for outages, quota exhaustion and additional languages.
+- A public mobile-browser smoke test verified a Hindi Sarvam response, decoded
+  31-second audio and no eSpeak fallback request.
 
 ## Local verification
 
 - Frontend, legacy safety backend and Cloudflare Worker compile.
 - Nine domain tests pass.
-- Ten Playwright flows pass across desktop and mobile in explicitly isolated demonstration-test mode.
+- Eleven Playwright flows pass across desktop and mobile in explicitly isolated
+  demonstration-test mode; the duplicated mobile speech-engine download check
+  is intentionally skipped.
 - Wrangler deployment dry-run and D1 migrations pass.
 
 ## Remaining release hardening
 
 - Configure Firebase App Check/reCAPTCHA for the production hostname, observe metrics, then enforce it in the Worker.
-- Validate every claimed translation and speech-input language on target devices; browser voices determine speech-output coverage.
+- Validate every claimed translation and speech-input language with native
+  speakers. Neural speech currently covers only Sarvam's declared ten Indian
+  languages plus English; device/eSpeak fallback quality varies elsewhere.
 - Review agronomic recommendations against authoritative crop evidence before field use.
 - Replace deprecated GAUL 2015 boundary sourcing with a verified current boundary source before long-term operation.
 - Add current weather and source-freshness policy.

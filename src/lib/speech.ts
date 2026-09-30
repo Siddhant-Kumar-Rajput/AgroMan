@@ -1,3 +1,5 @@
+import { demo, request } from "./api";
+
 const nativeLocales: Record<string, string> = {
   en: "en-IN",
   as: "as-IN",
@@ -41,6 +43,20 @@ export const offlineSpeechLocales: Readonly<Record<string, string>> = {
   te: "te",
   ur: "ur",
 };
+
+const neuralSpeechLocales = new Set([
+  "en",
+  "bn",
+  "gu",
+  "hi",
+  "kn",
+  "ml",
+  "mr",
+  "or",
+  "pa",
+  "ta",
+  "te",
+]);
 
 type EspeakWorker = {
   samplerate: number;
@@ -167,10 +183,45 @@ async function speakOffline(text: string, locale: string) {
   return true;
 }
 
+function base64Bytes(value: string) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1)
+    bytes[index] = binary.charCodeAt(index);
+  return bytes;
+}
+
+async function speakNaturally(text: string, locale: string) {
+  if (demo || !neuralSpeechLocales.has(locale)) return false;
+  audioContext ??= new AudioContext();
+  if (audioContext.state === "suspended") await audioContext.resume();
+  const result = await request<{ data: string; mime: "audio/wav" }>(
+    "speech/synthesize",
+    { text, locale },
+  );
+  const bytes = base64Bytes(result.data);
+  const buffer = await audioContext.decodeAudioData(bytes.buffer);
+  activeSource?.stop();
+  const source = audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioContext.destination);
+  source.onended = () => {
+    if (activeSource === source) activeSource = undefined;
+  };
+  activeSource = source;
+  source.start();
+  return true;
+}
+
 export async function speakText(text: string, locale: string) {
   const clean = cleanForSpeech(text);
   if (!clean) return false;
   if (await speakNatively(clean, locale)) return true;
+  try {
+    if (await speakNaturally(clean, locale)) return true;
+  } catch {
+    // Quota, network, or provider failures fall back to on-device speech.
+  }
   return speakOffline(clean, locale);
 }
 

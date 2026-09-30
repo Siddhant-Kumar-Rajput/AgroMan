@@ -9,9 +9,11 @@ Most setup is automated. The first live deployment is complete; this file record
 - Cloudflare authenticated on this device.
 - Worker deployed at `https://agroman-api.agroman.workers.dev`.
 - Gemini key stored as Cloudflare encrypted secret `GEMINI_API_KEY`.
+- Sarvam key stored as Cloudflare encrypted secret `SARVAM_API_KEY`.
 - APAC D1 database `agroman` created and migrated.
 - Six Earth Engine context/boundary rows dated 15 September 2026 reviewed and imported.
-- Live Firebase token, context and Gemini advisory smoke tests passed.
+- Live Firebase token, context, Gemini advisory and Sarvam Hindi speech smoke
+  tests passed.
 
 No purchased domain is required for the hackathon. The Firebase URL already contains AgroMan.
 
@@ -54,8 +56,11 @@ Review every generated SQL file before import. The exporter refuses missing sour
 
 ## Secrets and privacy
 
-- Never put Gemini keys, Cloudflare tokens, passwords or OTPs in source control or chat.
+- Never put Gemini/Sarvam keys, Cloudflare tokens, passwords or OTPs in source
+  control or chat.
 - Never silently substitute synthetic data in live mode.
 - Images, audio and raw GPS coordinates must not be persisted or logged.
 - Rotate the Gemini key in Cloudflare **Workers & Pages → agroman-api → Settings → Variables and Secrets**.
+- Rotate the Sarvam key in the same Cloudflare secret panel. Never expose it as
+  a frontend environment variable.
 - Keep App Check optional only during staging; enforce it before broader public use.

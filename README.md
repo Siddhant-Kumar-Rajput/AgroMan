@@ -35,7 +35,8 @@ npm run dev -w worker
 - JSON authority summaries with explicit synthetic/live provenance.
 - Protected Worker routes for Gemini, speech recognition, translation, D1 context and reports.
 - Firebase anonymous ID-token verification, optional App Check, quotas and diagnosis receipts.
-- Browser-native text-to-speech, avoiding a paid cloud speech-output dependency.
+- Browser-native speech first, Sarvam Bulbul v3 neural speech for ten Indian
+  languages plus English, and an on-device eSpeak fallback.
 - PWA shell and cached local conversations; new advice needs network access.
 
 ## Activation requirements and known limits
@@ -46,7 +47,7 @@ The live Phase 1 path is deployed at `https://agroman-siddhant-rajput.web.app`: 
 
 The pilot registry currently contains **six districts**: Ludhiana, Amritsar, Lucknow, Varanasi, Pune and Nashik. This is representative coverage of three states, not full-state coverage. Expanding the registry and verifying district boundary aliases remains data work.
 
-All 22 scheduled Indian languages plus English are selectable. Live UI translation uses the Cloudflare AI4Bharat IndicTrans2 model where supported; English remains the honest fallback. Fonts, translated names, errors and linguistic accuracy must be reviewed by speakers before claiming full support. Speech input uses Whisper and speech output depends on voices installed in the user's browser/device.
+All 22 scheduled Indian languages plus English are selectable. Live UI translation uses the Cloudflare AI4Bharat IndicTrans2 model where supported; English remains the honest fallback. Fonts, translated names, errors and linguistic accuracy must be reviewed by speakers before claiming full support. Speech input uses Whisper. Speech output prefers a device voice, then Sarvam Bulbul v3 for Hindi, Bengali, Tamil, Telugu, Gujarati, Kannada, Malayalam, Marathi, Punjabi and Odia, with eSpeak as the offline/quota fallback. Other languages still depend on a compatible device or eSpeak voice and must not be described as neural coverage.
 
 The community visualization is a labeled schematic, not a geographic basemap. Raw reports and installation identifiers are never returned to the browser in live mode. Confidence is an uncalibrated AI score, not diagnostic certainty; outbreak clusters are unverified signals.
 

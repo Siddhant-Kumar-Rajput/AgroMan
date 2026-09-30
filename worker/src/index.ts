@@ -19,6 +19,7 @@ interface Env {
   DB: D1Database;
   GEMINI_API_KEY: string;
   GEMINI_MODEL: string;
+  SARVAM_API_KEY: string;
   FIREBASE_PROJECT_ID: string;
   FIREBASE_PROJECT_NUMBER: string;
   FIREBASE_APP_ID: string;
@@ -124,6 +125,20 @@ const whisperLocales: Record<string, string> = {
   ta: "ta",
   te: "te",
   ur: "ur",
+};
+
+const sarvamLocales: Partial<Record<string, string>> = {
+  en: "en-IN",
+  bn: "bn-IN",
+  gu: "gu-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+  ml: "ml-IN",
+  mr: "mr-IN",
+  or: "od-IN",
+  pa: "pa-IN",
+  ta: "ta-IN",
+  te: "te-IN",
 };
 
 function corsHeaders(request: Request, env: Env) {
@@ -706,6 +721,54 @@ async function route(request: Request, env: Env) {
       .parse(await body(request));
     await rateLimit(env, uid, "translation", 25);
     return json(request, env, await translateUi(env, locale));
+  }
+  if (request.method === "POST" && path === "speech/synthesize") {
+    const input = z
+      .object({
+        text: z.string().min(1).max(2500),
+        locale: localeSchema,
+      })
+      .parse(await body(request));
+    const languageCode = sarvamLocales[input.locale];
+    if (!languageCode)
+      throw new ApiError(
+        422,
+        "Natural read aloud is unavailable for this language.",
+      );
+    if (!env.SARVAM_API_KEY)
+      throw new ApiError(503, "Natural read aloud is not configured yet.");
+    await rateLimit(env, uid, "speech-synthesis", 30);
+    const provider = await fetch("https://api.sarvam.ai/text-to-speech", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "api-subscription-key": env.SARVAM_API_KEY,
+      },
+      body: JSON.stringify({
+        text: input.text,
+        language_code: languageCode,
+        model: "bulbul:v3",
+        speaker: "shubh",
+        pace: 0.92,
+        temperature: 0.5,
+        speech_sample_rate: 24000,
+        output_audio_codec: "wav",
+      }),
+    });
+    if (!provider.ok) {
+      console.error("Sarvam speech request rejected", {
+        status: provider.status,
+      });
+      throw new ApiError(503, "Natural read aloud is temporarily unavailable.");
+    }
+    const result = z
+      .object({ audios: z.array(z.string().min(1).max(8_000_000)).min(1) })
+      .parse(await provider.json());
+    return json(request, env, {
+      data: result.audios.join(""),
+      mime: "audio/wav",
+    });
   }
   if (request.method === "POST" && path === "speech/transcribe") {
     const input = z

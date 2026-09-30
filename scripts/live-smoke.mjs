@@ -5,7 +5,12 @@ const site =
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 412, height: 915 } });
 const pageErrors = [];
+let offlineFallbackRequested = false;
 page.on("pageerror", (error) => pageErrors.push(error.message));
+page.on("request", (request) => {
+  if (request.url().endsWith("/espeak/espeak-ng.data"))
+    offlineFallbackRequested = true;
+});
 
 try {
   await page.addInitScript(() => {
@@ -13,14 +18,10 @@ try {
       configurable: true,
       value: () => [],
     });
-    const createBuffer = AudioContext.prototype.createBuffer;
-    AudioContext.prototype.createBuffer = function (
-      channels,
-      length,
-      sampleRate,
-    ) {
-      window.__agromanSpeechSeconds = length / sampleRate;
-      return createBuffer.call(this, channels, length, sampleRate);
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      window.__agromanSpeechSeconds = this.buffer?.duration ?? 0;
+      return start.apply(this, args);
     };
   });
   await page.goto(site, { waitUntil: "networkidle" });
@@ -78,15 +79,15 @@ try {
   await page
     .getByText(hindiResult.text, { exact: true })
     .waitFor({ timeout: 10000 });
-  const speechAsset = page.waitForResponse(
-    (candidate) => candidate.url().endsWith("/espeak/espeak-ng.data"),
+  const speechApi = page.waitForResponse(
+    (candidate) => candidate.url().includes("/v1/speech/synthesize"),
     { timeout: 60000 },
   );
   const audioButton = page.locator("article.assistant .audio-button").last();
   await audioButton.click();
-  const speechResponse = await speechAsset;
+  const speechResponse = await speechApi;
   if (!speechResponse.ok())
-    throw new Error(`Speech data returned ${speechResponse.status()}`);
+    throw new Error(`Natural speech returned ${speechResponse.status()}`);
   await page.waitForFunction(
     () => {
       const buttons = document.querySelectorAll(
@@ -102,6 +103,8 @@ try {
   );
   if (speechSeconds <= 2)
     throw new Error(`Hindi speech was truncated at ${speechSeconds} seconds.`);
+  if (offlineFallbackRequested)
+    throw new Error("Natural speech failed and used the robotic fallback.");
   if (pageErrors.length) throw new Error(pageErrors.join("; "));
   console.log(
     JSON.stringify({
@@ -109,9 +112,9 @@ try {
       insufficientPhotoRejected: true,
       responseCharacters: result.text.length,
       hindiResponse: "passed",
-      hindiSpeechFallback: "passed",
+      hindiNaturalSpeech: "passed",
       hindiSpeechSeconds: Math.round(speechSeconds * 10) / 10,
-      speechAssetStatus: speechResponse.status(),
+      speechApiStatus: speechResponse.status(),
     }),
   );
 } finally {

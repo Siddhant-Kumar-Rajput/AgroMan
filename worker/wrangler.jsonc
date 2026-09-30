@@ -23,6 +23,6 @@
     "DAILY_REQUEST_LIMIT": "40",
   },
   "secrets": {
-    "required": ["GEMINI_API_KEY"],
+    "required": ["GEMINI_API_KEY", "SARVAM_API_KEY"],
   },
 }
